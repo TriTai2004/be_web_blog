@@ -33,6 +33,11 @@ Update application.properties:
   spring.jpa.database-platform=org.hibernate.dialect.SQLServerDialect
   spring.jpa.hibernate.ddl-auto=update
   spring.jpa.show-sql=true
+
+  cloudinary.cloud_name=your_cloud_name
+  cloudinary.api_secret=your_api_secret
+  cloudinary.api_key=your_api_key
+
 3. Run project
 mvn spring-boot:run
 Or run the main class:
