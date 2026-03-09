@@ -1,6 +1,8 @@
 package app.demo.service.Impl;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 import app.demo.dto.req.ArticleRequest;
 import app.demo.dto.res.ArticleResponse;
@@ -30,6 +36,9 @@ public class ArticleService implements IArticleService{
 
     @Autowired
     private ArticleMappter articleMappter;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
 
     @Override
@@ -116,6 +125,14 @@ public class ArticleService implements IArticleService{
         }
 
         return articleMappter.toResponse(article);
+    }
+
+    @Override
+    public String uploadImage(MultipartFile file, UserDetails userDetails) throws IOException {
+        
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        
+        return uploadResult.get("url").toString();
     }
     
     
