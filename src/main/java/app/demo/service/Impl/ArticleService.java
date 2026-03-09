@@ -128,11 +128,23 @@ public class ArticleService implements IArticleService{
     }
 
     @Override
-    public String uploadImage(MultipartFile file, UserDetails userDetails) throws IOException {
+    public Map<String, Object> uploadImage(MultipartFile file, UserDetails userDetails) throws IOException {
         
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
         
-        return uploadResult.get("url").toString();
+        return Map.of(
+            "publicId", uploadResult.get("public_id"),
+            "url", uploadResult.get("url")
+        );
+    }
+
+    @Override
+    public String deleteImage(String publicId, UserDetails userDetails) throws IOException {
+        
+        Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+
+        return result.toString();
+
     }
     
     

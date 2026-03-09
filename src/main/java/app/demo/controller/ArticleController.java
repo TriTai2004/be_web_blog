@@ -83,4 +83,12 @@ public class ArticleController {
     )throws IOException{
         return ResponseEntity.ok(articleService.uploadImage(file, userDetails));
     }
+
+    @DeleteMapping("/delete-image/{id}")
+    public ResponseEntity<?> deleteImage(
+        @AuthenticationPrincipal UserDetails userDetails,
+        @PathVariable("id") String publicId
+    )throws IOException{
+        return ResponseEntity.ok(articleService.deleteImage(publicId, userDetails));
+    }
 }
