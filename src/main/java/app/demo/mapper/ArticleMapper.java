@@ -14,7 +14,7 @@ import app.demo.modal.Article;
 import app.demo.modal.Category;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface ArticleMappter {
+public interface ArticleMapper {
     
     ArticleResponse toResponse (Article article);
 

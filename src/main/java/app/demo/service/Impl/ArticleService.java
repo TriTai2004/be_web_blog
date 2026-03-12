@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,8 @@ import com.cloudinary.utils.ObjectUtils;
 import app.demo.dto.req.ArticleRequest;
 import app.demo.dto.res.ArticleResponse;
 import app.demo.exception.ResourceNotFoundException;
-import app.demo.mapper.ArticleMappter;
+import app.demo.filter.ArticleFilter;
+import app.demo.mapper.ArticleMapper;
 import app.demo.modal.Account;
 import app.demo.modal.Article;
 import app.demo.payload.PaginationResponse;
@@ -35,7 +37,7 @@ public class ArticleService implements IArticleService{
     private ArticleRepository articleRepository;
 
     @Autowired
-    private ArticleMappter articleMappter;
+    private ArticleMapper articleMapper;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -48,7 +50,7 @@ public class ArticleService implements IArticleService{
             () -> new ResourceNotFoundException("Article not found")
         );
 
-        return articleMappter.toResponse(article);
+        return articleMapper.toResponse(article);
     }
 
     @Override
@@ -56,7 +58,7 @@ public class ArticleService implements IArticleService{
 
         Page<Article> pages = articleRepository.findAll(pageable);
 
-        List<ArticleResponse> results = articleMappter.toResponses(pages.getContent());
+        List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
 
         return PaginationResponse.<List<ArticleResponse>>builder()
             .data(results)
@@ -70,7 +72,7 @@ public class ArticleService implements IArticleService{
     @Override
     public ArticleResponse create(ArticleRequest entity, UserDetails userDetails) {
 
-        Article article = articleMappter.toEntity(entity);
+        Article article = articleMapper.toEntity(entity);
         
         Account account = new Account();
         account.setId(UUID.fromString(userDetails.getUsername()));
@@ -83,7 +85,7 @@ public class ArticleService implements IArticleService{
 
         article = articleRepository.save(article);
 
-        return articleMappter.toResponse(article);
+        return articleMapper.toResponse(article);
     }
 
     @Override
@@ -91,7 +93,7 @@ public class ArticleService implements IArticleService{
         
         ArticleResponse articleResponse = findById(id);
 
-        Article article = articleMappter.toEntity(entity);
+        Article article = articleMapper.toEntity(entity);
         article.setId(UUID.fromString(id));
         article.setSlug(articleResponse.getSlug());
         article.setCreatedAt(articleResponse.getCreatedAt());
@@ -102,7 +104,7 @@ public class ArticleService implements IArticleService{
 
         article = articleRepository.save(article);
         
-        return articleMappter.toResponse(article);
+        return articleMapper.toResponse(article);
 
     }
 
@@ -124,7 +126,7 @@ public class ArticleService implements IArticleService{
             throw new ResourceNotFoundException("not found article");
         }
 
-        return articleMappter.toResponse(article);
+        return articleMapper.toResponse(article);
     }
 
     @Override
@@ -145,6 +147,41 @@ public class ArticleService implements IArticleService{
 
         return result.toString();
 
+    }
+
+    @Override
+    public PaginationResponse<List<ArticleResponse>> findAll(String search, Pageable pageable) {
+        
+        Specification<Article> specification = ArticleFilter.articleFilter(search);
+
+        Page<Article> pages = articleRepository.findAll(specification, pageable);
+
+        List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
+
+        return PaginationResponse.<List<ArticleResponse>>builder()
+            .data(results)
+            .currentPage(pages.getNumber())
+            .totalItems(pages.getTotalElements())
+            .totalPages(pages.getTotalPages())
+            .build();
+
+    }
+
+    @Override
+    public PaginationResponse<List<ArticleResponse>> findAllPopular(Pageable pageable) {
+
+        Specification<Article> specification = ArticleFilter.articleFilterPopular();
+
+        Page<Article> pages = articleRepository.findAll(specification, pageable);
+
+        List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
+
+        return PaginationResponse.<List<ArticleResponse>>builder()
+            .data(results)
+            .currentPage(pages.getNumber())
+            .totalItems(pages.getTotalElements())
+            .totalPages(pages.getTotalPages())
+            .build();
     }
     
     

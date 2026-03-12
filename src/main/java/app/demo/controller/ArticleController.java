@@ -30,8 +30,10 @@ public class ArticleController {
     private IArticleService articleService;
     
     @GetMapping("/findAll")
-    public ResponseEntity<?> findAll(Pageable pageable){
-        return ResponseEntity.ok(articleService.findAll(pageable));
+    public ResponseEntity<?> findAll(Pageable pageable,
+        @RequestParam(name = "search", required = false) String search
+    ){
+        return ResponseEntity.ok(articleService.findAll(search, pageable));
     }
 
     @GetMapping("/findById/{id}")
@@ -90,5 +92,12 @@ public class ArticleController {
         @PathVariable("id") String publicId
     )throws IOException{
         return ResponseEntity.ok(articleService.deleteImage(publicId, userDetails));
+    }
+
+    @GetMapping("/findAll/popular")
+    public ResponseEntity<?> findAllHotTop(Pageable pageable
+        
+    ){
+        return ResponseEntity.ok(articleService.findAllPopular(pageable));
     }
 }
