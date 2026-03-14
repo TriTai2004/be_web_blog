@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import app.demo.dto.req.ArticleRequest;
 import app.demo.dto.res.ArticleResponse;
 import app.demo.payload.PaginationResponse;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public interface IArticleService extends IService<ArticleResponse, ArticleRequest, String>{
@@ -19,7 +20,8 @@ public interface IArticleService extends IService<ArticleResponse, ArticleReques
     ArticleResponse findBySlug (String slug);
     Map<String, Object> uploadImage(MultipartFile file, UserDetails userDetails) throws IOException;
     String deleteImage(String publicId, UserDetails userDetails) throws IOException;
-    PaginationResponse<List<ArticleResponse>> findAll(String search, Pageable pageable);
+    PaginationResponse<List<ArticleResponse>> findAll(String search, String slugCategory, Pageable pageable);
     PaginationResponse<List<ArticleResponse>> findAllPopular(Pageable pageable);
+    ArticleResponse updateViews(String id, HttpServletRequest request);
 
 }

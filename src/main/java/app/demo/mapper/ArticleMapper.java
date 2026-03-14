@@ -16,8 +16,17 @@ import app.demo.modal.Category;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ArticleMapper {
     
+    @Mapping(target = "likes", source = ".", qualifiedByName = "mapLikes")
     ArticleResponse toResponse (Article article);
 
+    @Named("mapLikes")
+    default Integer mapLikes(Article article) {
+        if (article.getLikes() != null) {
+            return article.getLikes().size();
+        }
+        return 0;
+    }
+ 
     List<ArticleResponse> toResponses (List<Article> articles);
 
 

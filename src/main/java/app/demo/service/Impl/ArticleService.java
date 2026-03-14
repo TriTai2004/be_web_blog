@@ -28,10 +28,10 @@ import app.demo.payload.PaginationResponse;
 import app.demo.repository.ArticleRepository;
 import app.demo.service.Iface.IArticleService;
 import app.demo.util.SlugUtil;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
-public class ArticleService implements IArticleService{
-
+public class ArticleService implements IArticleService {
 
     @Autowired
     private ArticleRepository articleRepository;
@@ -42,13 +42,11 @@ public class ArticleService implements IArticleService{
     @Autowired
     private Cloudinary cloudinary;
 
-
     @Override
     public ArticleResponse findById(String id) {
 
         Article article = articleRepository.findById(UUID.fromString(id)).orElseThrow(
-            () -> new ResourceNotFoundException("Article not found")
-        );
+                () -> new ResourceNotFoundException("Article not found"));
 
         return articleMapper.toResponse(article);
     }
@@ -61,19 +59,19 @@ public class ArticleService implements IArticleService{
         List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
 
         return PaginationResponse.<List<ArticleResponse>>builder()
-            .data(results)
-            .currentPage(pages.getNumber())
-            .totalItems(pages.getTotalElements())
-            .totalPages(pages.getTotalPages())
-            .build();
-        
+                .data(results)
+                .currentPage(pages.getNumber())
+                .totalItems(pages.getTotalElements())
+                .totalPages(pages.getTotalPages())
+                .build();
+
     }
 
     @Override
     public ArticleResponse create(ArticleRequest entity, UserDetails userDetails) {
 
         Article article = articleMapper.toEntity(entity);
-        
+
         Account account = new Account();
         account.setId(UUID.fromString(userDetails.getUsername()));
 
@@ -90,7 +88,7 @@ public class ArticleService implements IArticleService{
 
     @Override
     public ArticleResponse update(String id, ArticleRequest entity, UserDetails userDetails) {
-        
+
         ArticleResponse articleResponse = findById(id);
 
         Article article = articleMapper.toEntity(entity);
@@ -103,7 +101,7 @@ public class ArticleService implements IArticleService{
         }
 
         article = articleRepository.save(article);
-        
+
         return articleMapper.toResponse(article);
 
     }
@@ -111,9 +109,9 @@ public class ArticleService implements IArticleService{
     @Override
     @Transactional
     public void delete(String id) {
-        
+
         Article article = articleRepository.findById(UUID.fromString(id))
-            .orElseThrow(() -> new ResourceNotFoundException("article not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("article not found"));
 
         article.setDeleted(true);
 
@@ -131,18 +129,17 @@ public class ArticleService implements IArticleService{
 
     @Override
     public Map<String, Object> uploadImage(MultipartFile file, UserDetails userDetails) throws IOException {
-        
+
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-        
+
         return Map.of(
-            "publicId", uploadResult.get("public_id"),
-            "url", uploadResult.get("url")
-        );
+                "publicId", uploadResult.get("public_id"),
+                "url", uploadResult.get("url"));
     }
 
     @Override
     public String deleteImage(String publicId, UserDetails userDetails) throws IOException {
-        
+
         Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
 
         return result.toString();
@@ -150,20 +147,20 @@ public class ArticleService implements IArticleService{
     }
 
     @Override
-    public PaginationResponse<List<ArticleResponse>> findAll(String search, Pageable pageable) {
-        
-        Specification<Article> specification = ArticleFilter.articleFilter(search);
+    public PaginationResponse<List<ArticleResponse>> findAll(String search, String slugCategory, Pageable pageable) {
+
+        Specification<Article> specification = ArticleFilter.articleFilter(search, slugCategory);
 
         Page<Article> pages = articleRepository.findAll(specification, pageable);
 
         List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
 
         return PaginationResponse.<List<ArticleResponse>>builder()
-            .data(results)
-            .currentPage(pages.getNumber())
-            .totalItems(pages.getTotalElements())
-            .totalPages(pages.getTotalPages())
-            .build();
+                .data(results)
+                .currentPage(pages.getNumber())
+                .totalItems(pages.getTotalElements())
+                .totalPages(pages.getTotalPages())
+                .build();
 
     }
 
@@ -177,12 +174,24 @@ public class ArticleService implements IArticleService{
         List<ArticleResponse> results = articleMapper.toResponses(pages.getContent());
 
         return PaginationResponse.<List<ArticleResponse>>builder()
-            .data(results)
-            .currentPage(pages.getNumber())
-            .totalItems(pages.getTotalElements())
-            .totalPages(pages.getTotalPages())
-            .build();
+                .data(results)
+                .currentPage(pages.getNumber())
+                .totalItems(pages.getTotalElements())
+                .totalPages(pages.getTotalPages())
+                .build();
     }
-    
-    
+
+    @Override
+    public ArticleResponse updateViews(String id, HttpServletRequest request) {
+
+
+        Article article = articleRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new ResourceNotFoundException("article not found"));
+
+
+        article.setViews(article.getViews() + 1);
+
+        return articleMapper.toResponse(articleRepository.save(article));
+    }
+
 }

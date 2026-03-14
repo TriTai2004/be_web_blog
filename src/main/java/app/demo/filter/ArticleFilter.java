@@ -10,7 +10,7 @@ import jakarta.persistence.criteria.Predicate;
 
 public class ArticleFilter {
 
-    public static Specification<Article> articleFilter(String search) {
+    public static Specification<Article> articleFilter(String search, String slugCategory) {
         return (root, query, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
@@ -18,6 +18,10 @@ public class ArticleFilter {
             if (search != null && !search.isBlank()) {
                 predicates.add(cb.like(cb.lower(root.get("title")), "%" + search.toLowerCase() + "%"));
 
+            }
+
+            if (slugCategory != null && !slugCategory.isBlank()) {
+                predicates.add(cb.equal(root.get("category").get("slug"), slugCategory));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

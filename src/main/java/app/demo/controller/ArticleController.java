@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import app.demo.dto.req.ArticleRequest;
 import app.demo.service.Iface.IArticleService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -31,9 +32,10 @@ public class ArticleController {
     
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll(Pageable pageable,
-        @RequestParam(name = "search", required = false) String search
+        @RequestParam(name = "search", required = false) String search,
+        @RequestParam(name = "slugCategory", required = false) String slugCategory
     ){
-        return ResponseEntity.ok(articleService.findAll(search, pageable));
+        return ResponseEntity.ok(articleService.findAll(search, slugCategory, pageable));
     }
 
     @GetMapping("/findById/{id}")
@@ -99,5 +101,12 @@ public class ArticleController {
         
     ){
         return ResponseEntity.ok(articleService.findAllPopular(pageable));
+    }
+
+    @PutMapping("/views/{id}")
+    public ResponseEntity<?> viewArticle(@PathVariable("id") String id,
+        HttpServletRequest request
+) {
+        return ResponseEntity.ok(articleService.updateViews(id, request));
     }
 }

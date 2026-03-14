@@ -15,6 +15,7 @@ public class ArticleResponse {
     private float views;
     private String thumbnail;
     private String slug;
+    private Integer likes;
     
     private Date createdAt;
     private Date updatedAt;
