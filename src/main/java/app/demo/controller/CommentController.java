@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import app.demo.dto.req.CommentRequest;
@@ -26,9 +27,11 @@ public class CommentController {
     private ICommentService commentService;
     
     @GetMapping("/findAll")
-    public ResponseEntity<?> findAll(Pageable pageable){
+    public ResponseEntity<?> findAll(Pageable pageable,
+        @RequestParam(name = "articleId", required = false) String articleId
+    ){
 
-        return ResponseEntity.ok(commentService.findAll(pageable));
+        return ResponseEntity.ok(commentService.findAll(pageable, articleId));
     }
 
     @GetMapping("/{id}")
