@@ -19,5 +19,10 @@ public class CommentResponse {
     private UUID articleId;
     private UUID authorId;
     private UUID parentId;
+    private int totalReplies;
+    private int totalLikes;
+    private boolean likedByCurrentUser;
+    private String parentAuthorName;
+    
 
 }

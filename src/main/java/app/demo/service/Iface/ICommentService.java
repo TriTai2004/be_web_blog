@@ -12,5 +12,5 @@ import app.demo.payload.PaginationResponse;
 public interface ICommentService extends IService<CommentResponse, CommentRequest, String>{
     
     void deleteById(String id, UserDetails userDetails);
-    PaginationResponse<List<CommentResponse>> findAll(Pageable pageable, String articleId);
+    PaginationResponse<List<CommentResponse>> findAll(Pageable pageable, String articleId, String parentId);
 }

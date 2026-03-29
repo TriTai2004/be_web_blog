@@ -28,10 +28,11 @@ public class CommentController {
     
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll(Pageable pageable,
-        @RequestParam(name = "articleId", required = false) String articleId
+        @RequestParam(name = "articleId", required = false) String articleId,
+        @RequestParam(name = "parentId", required = false) String parentId
     ){
 
-        return ResponseEntity.ok(commentService.findAll(pageable, articleId));
+        return ResponseEntity.ok(commentService.findAll(pageable, articleId, parentId));
     }
 
     @GetMapping("/{id}")

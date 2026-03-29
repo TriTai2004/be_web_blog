@@ -19,6 +19,7 @@ import app.demo.mapper.CommentMapper;
 import app.demo.modal.Account;
 import app.demo.modal.Comment;
 import app.demo.payload.PaginationResponse;
+import app.demo.repository.AccountRepository;
 import app.demo.repository.CommentRepository;
 import app.demo.service.Iface.ICommentService;
 
@@ -30,6 +31,9 @@ public class CommentService implements ICommentService {
 
     @Autowired
     private CommentMapper commentMapper;
+
+    @Autowired
+    private AccountRepository accountRepository; 
 
     @Override
     public CommentResponse findById(String id) {
@@ -58,8 +62,8 @@ public class CommentService implements ICommentService {
 
         Comment comment = commentMapper.toEntity(entity);
 
-        Account author = new Account();
-        author.setId(UUID.fromString(userDetails.getUsername()));
+        Account author = accountRepository.findById(UUID.fromString(userDetails.getUsername()))
+                .orElseThrow(() -> new ResourceNotFoundException("Author not found"));
 
         comment.setAuthor(author);
 
@@ -99,9 +103,9 @@ public class CommentService implements ICommentService {
     }
 
     @Override
-    public PaginationResponse<List<CommentResponse>> findAll(Pageable pageable, String articleId) {
+    public PaginationResponse<List<CommentResponse>> findAll(Pageable pageable, String articleId, String parentId) {
 
-        Specification<Comment> specification = CommentFilter.commentFilter(articleId);
+        Specification<Comment> specification = CommentFilter.commentFilter(articleId, parentId);
 
         Page<Comment> page = commentRepository.findAll(specification, pageable);
 
