@@ -26,7 +26,7 @@ public class UserDetailConfig implements UserDetailsService{
 
         return User.builder()
             .username(String.valueOf(account.getId()))
-            .password(account.getPassword())
+            .password(account.getPassword() != null ? account.getPassword() : "N/A")
             .roles(account.getRole())
             .build();
     }

@@ -25,8 +25,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        System.out.println("Request path: " + request.getServletPath());
         String path = request.getServletPath();
-        return path.startsWith("/api/auth/");
+            return path.equals("/api/auth/login")
+        || path.equals("/api/auth/register")
+        || path.equals("/api/auth/refresh");
     }
 
     @Override
@@ -35,47 +38,46 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        String token = null;
 
-        System.out.println("Authorization Header: " + header);
-
-        // Không có token → cho qua
-        if (header == null || !header.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        // Chỉ xử lý khi có Bearer token
-        if (header != null && header.startsWith("Bearer ")) {
-            try {
-                String token = header.substring(7);
-
-                // 1. Giải mã token
-                String email = jwtUtil.extractEmail(token);
-
-                System.out.println("Extracted email from token: " + email);
-
-                // 2. Load user từ DB
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
-                // 3. Tạo Authentication
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
-
-                // 4. Set vào SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(auth);
-
-                System.out.println("Authorities: " + userDetails.getAuthorities());
-
-            } catch (Exception e) {
-                // Token sai / hết hạn / user không tồn tại
-                System.out.println(e.getMessage());
-                SecurityContextHolder.clearContext();
+        // Lấy token từ cookie
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                }
             }
         }
 
-        // Cho request đi tiếp
+        // Không có token cho qua
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            // 1. Giải mã token
+            String email = jwtUtil.extractEmail(token);
+
+            // 2. Load user
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+            // 3. Tạo auth
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities());
+
+            // 4. Set context
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
+
+        } catch (Exception e) {
+            System.out.println("JWT Error: " + e.getMessage());
+            SecurityContextHolder.clearContext();
+        }
+
         filterChain.doFilter(request, response);
     }
 
