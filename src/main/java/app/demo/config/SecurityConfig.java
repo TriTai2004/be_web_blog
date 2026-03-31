@@ -16,7 +16,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import app.demo.filter.JwtFilter;
-
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-    
+
     @Autowired
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
@@ -67,7 +67,13 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated())
 
-                .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler));
+                .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2SuccessHandler))
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\": \"Unauthorized ssss\"}");
+                        }));
 
         httpSecurity.addFilterBefore(
                 jwtFilter,
@@ -86,7 +92,6 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

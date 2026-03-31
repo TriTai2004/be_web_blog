@@ -1,7 +1,6 @@
 package app.demo.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,8 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import app.demo.dto.req.LoginRequest;
 import app.demo.dto.req.RefreshTokenRequest;
-import app.demo.dto.res.LoginResponse;
 import app.demo.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -22,20 +22,15 @@ public class AuthController {
     private final AuthService  authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest req) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
 
-        LoginResponse loginResponse = authService.login(req.getEmail(), req.getPassword());
+        return authService.login(req.getEmail(), req.getPassword(), request, response);
 
-        if(loginResponse != null){
-            return ResponseEntity.ok(loginResponse);
-        }
-
-        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid LoginRequest req) {
-        return authService.register(req.getEmail(), req.getPassword());
+    public ResponseEntity<?> register(@RequestBody @Valid LoginRequest req, HttpServletRequest request, HttpServletResponse response) {
+        return authService.register(req.getEmail(), req.getPassword(), request, response);
     }
 
     @PostMapping("/refresh-token")
@@ -45,8 +40,5 @@ public class AuthController {
         return authService.refreshToken(refreshTokenRequest.getRefreshToken());
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getMe() {
-        return ResponseEntity.ok(authService.getMe());
-    }
+  
 }

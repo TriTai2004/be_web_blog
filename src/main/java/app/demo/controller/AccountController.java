@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import app.demo.dto.req.AccountRequest;
+import app.demo.service.AuthService;
 import app.demo.service.Iface.IAccountService;
 import jakarta.validation.Valid;
 
@@ -21,6 +22,9 @@ public class AccountController {
 
     @Autowired
     private IAccountService accountService;
+
+    @Autowired
+    private AuthService authService;
     
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll(
@@ -45,4 +49,9 @@ public class AccountController {
     ) {
         return ResponseEntity.ok(accountService.update(userDetails.getUsername(), req, userDetails));
     }   
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe() {
+        return ResponseEntity.ok(authService.getMe());
+    }
 }

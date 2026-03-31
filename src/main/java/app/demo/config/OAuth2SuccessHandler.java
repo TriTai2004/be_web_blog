@@ -35,26 +35,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String email = oauthUser.getAttribute("email");
 
-        Account account = accountRepository.findByEmail(email);
+        Account account = accountRepository.findByEmail(email.trim());
 
         if (account == null) {
             account = new Account();
-            account.setEmail(email);
+            account.setEmail(email.trim());
             account.setFullname(oauthUser.getAttribute("name"));
             account.setAvatar(oauthUser.getAttribute("picture"));
             account.setRole("USER");
-            accountRepository.save(account);
+            account = accountRepository.save(account);
         }
 
 
-        String accessToken = jwtUtil.generateToken(account.getEmail(), account.getRole());
-        String refreshToken = jwtUtil.generateRefreshToken(account.getEmail());
+        String accessToken = jwtUtil.generateToken(account.getEmail().trim(), account.getRole());
+        String refreshToken = jwtUtil.generateRefreshToken(account.getEmail().trim());
 
         response.addHeader("Set-Cookie",
                 "accessToken=" + accessToken + "; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax");
 
         response.addHeader("Set-Cookie",
                 "refreshToken=" + refreshToken + "; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax");
+
+        System.out.println("OAuth2 login successful for email: " + email);
 
         response.sendRedirect("http://localhost:5173");
 

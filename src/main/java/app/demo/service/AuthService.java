@@ -1,19 +1,18 @@
 package app.demo.service;
 
-import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 
-import org.mapstruct.control.MappingControl.Use;
+import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import app.demo.util.JwtUtil;
-import app.demo.dto.res.AccountResponse;
-import app.demo.dto.res.LoginResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import app.demo.dto.res.UserResponse;
 import app.demo.exception.ResourceNotFoundException;
 import app.demo.modal.Account;
@@ -24,119 +23,130 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AccountRepository accountRepository;
-    private final JwtUtil jwtUtil;
+        private final AccountRepository accountRepository;
+        private final JwtUtil jwtUtil;
+        private final PasswordEncoder passwordEncoder;
 
-    public LoginResponse login(String email, String password) {
+        public ResponseEntity<?> login(String email, String password,
+                        HttpServletRequest request,
+                        HttpServletResponse response) {
 
-        Account account = accountRepository.findByEmail(email);
-        if (account != null && account.getPassword().equals(Base64.getEncoder().encodeToString(password.getBytes()))) {
+                String normalizedEmail = email.trim();
 
-            UserResponse userResponse = UserResponse.builder()
-                    .id(account.getId())
-                    .email(account.getEmail())
-                    .role(account.getRole())
-                    .build();
-            String token = jwtUtil.generateToken(account.getEmail(), account.getRole());
-            LoginResponse loginResponse = LoginResponse.builder()
-                    .accessToken(token)
-                    .refreshToken(jwtUtil.generateRefreshToken(account.getEmail()))
-                    .expiresIn(jwtUtil.extractExpiration(token).getTime())
-                    .tokenType("Bearer")
-                    .user(userResponse)
-                    .build();
+                Account account = accountRepository.findByEmail(normalizedEmail);
 
-            return loginResponse;
-        } else {
-            return null;
+                if (account == null || !passwordEncoder.matches(password, account.getPassword())) {
+                        return ResponseEntity.status(401)
+                                        .body(Map.of("message", "Invalid email or password"));
+                }
+
+                String accessToken = jwtUtil.generateToken(account.getEmail(), account.getRole());
+                String refreshToken = jwtUtil.generateRefreshToken(account.getEmail());
+
+                response.addHeader("Set-Cookie",
+                                "accessToken=" + accessToken + "; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax");
+
+                response.addHeader("Set-Cookie",
+                                "refreshToken=" + refreshToken + "; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax");
+
+                return ResponseEntity.ok(UserResponse.builder()
+                                .id(account.getId())
+                                .email(account.getEmail())
+                                .fullname(account.getFullname() != null ? account.getFullname() : "")
+                                .avatar(account.getAvatar() != null ? account.getAvatar() : "")
+                                .role(account.getRole())
+                                .build());
         }
 
-    }
+        public ResponseEntity<?> register(String email, String password,
+                        HttpServletRequest request,
+                        HttpServletResponse response) {
 
-    public ResponseEntity<?> register(String email, String password) {
+                String normalizedEmail = email.trim();
 
-        Account existingAccount = accountRepository.findByEmail(email);
-        if (existingAccount != null) {
-            return ResponseEntity.status(409).body("Email already in use");
+                if (password.length() < 6) {
+                        return ResponseEntity.badRequest().body(Map.of("message", "Password too short"));
+                }
+
+                if (accountRepository.findByEmail(normalizedEmail) != null) {
+                        return ResponseEntity.status(409).body(Map.of("message", "Email already in use"));
+                }
+
+                Account account = new Account();
+                account.setEmail(normalizedEmail);
+                account.setPassword(passwordEncoder.encode(password));
+                account.setRole("USER");
+
+                account = accountRepository.save(account);
+
+                String accessToken = jwtUtil.generateToken(account.getEmail(), account.getRole());
+                String refreshToken = jwtUtil.generateRefreshToken(account.getEmail());
+
+                response.addHeader("Set-Cookie",
+                                "accessToken=" + accessToken + "; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax; ");
+
+                response.addHeader("Set-Cookie",
+                                "refreshToken=" + refreshToken + "; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; ");
+
+                return ResponseEntity.ok(UserResponse.builder()
+                                .id(account.getId())
+                                .email(account.getEmail())
+                                .fullname(account.getFullname() != null ? account.getFullname() : "")
+                                .avatar(account.getAvatar() != null ? account.getAvatar() : "")
+                                .role(account.getRole())
+                                .build());
         }
 
-        Account account = new Account();
-        account.setEmail(email);
-        account.setPassword(Base64.getEncoder().encodeToString(password.getBytes()));
-        account.setRole("USER");
-        account = accountRepository.save(account);
+        public ResponseEntity<?> refreshToken(String refreshToken) {
 
-        // Sinh token ngay sau khi tạo account
-        String token = jwtUtil.generateToken(account.getEmail(), account.getRole());
+                if (refreshToken.isBlank()) {
+                        return ResponseEntity.status(400).body("Refresh token is required");
+                }
 
-        UserResponse userResponse = UserResponse.builder()
-                .id(account.getId())
-                .email(account.getEmail())
-                .role(account.getRole())
-                .build();
+                if (jwtUtil.isTokenExpired(refreshToken, jwtUtil.getREFRESH_SECRET())) {
+                        return ResponseEntity.status(401).body("Refresh token expired");
+                }
 
-        LoginResponse loginResponse = LoginResponse.builder()
-                .accessToken(token)
-                .refreshToken(jwtUtil.generateRefreshToken(account.getEmail()))
-                .expiresIn(jwtUtil.extractExpiration(token).getTime())
-                .tokenType("Bearer")
-                .user(userResponse)
-                .build();
+                String email = jwtUtil.extractEmailFromRefreshToken(refreshToken);
 
-        return ResponseEntity.ok().body(loginResponse);
-    }
+                Account account = accountRepository.findByEmail(email);
 
-    public ResponseEntity<?> refreshToken(String refreshToken) {
+                String newAccessToken = jwtUtil.generateToken(email, account.getRole());
 
-        if (refreshToken.isBlank()) {
-            return ResponseEntity.status(400).body("Refresh token is required");
+                // Implement refresh token logic here
+                return ResponseEntity.ok(Map.of(
+                                "accessToken", newAccessToken,
+                                "tokenType", "Bearer",
+                                "expiresIn", jwtUtil.extractExpiration(newAccessToken).getTime()));
         }
 
-        if (jwtUtil.isTokenExpired(refreshToken, jwtUtil.getREFRESH_SECRET())) {
-            return ResponseEntity.status(401).body("Refresh token expired");
+        public UserResponse getMe() {
+
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+                // check null + chưa login
+                if (authentication == null || !authentication.isAuthenticated()
+                                || authentication.getPrincipal().equals("anonymousUser")) {
+                        throw new RuntimeException("Unauthorized");
+                }
+
+                UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+                // lấy user từ DB
+                Account account = accountRepository.findById(UUID.fromString(userDetails.getUsername()))
+                                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                String role = userDetails.getAuthorities().stream()
+                                .findFirst()
+                                .map(auth -> auth.getAuthority())
+                                .orElse("USER");
+
+                return UserResponse.builder()
+                                .id(account.getId())
+                                .email(account.getEmail())
+                                .fullname(account.getFullname() != null ? account.getFullname() : "")
+                                .avatar(account.getAvatar() != null ? account.getAvatar() : "")
+                                .role(role)
+                                .build();
         }
-
-        String email = jwtUtil.extractEmailFromRefreshToken(refreshToken);
-
-        Account account = accountRepository.findByEmail(email);
-
-        String newAccessToken = jwtUtil.generateToken(email, account.getRole());
-
-        // Implement refresh token logic here
-        return ResponseEntity.ok(Map.of(
-                "accessToken", newAccessToken,
-                "tokenType", "Bearer",
-                "expiresIn", jwtUtil.extractExpiration(newAccessToken).getTime()));
-    }
-
-    public Map<String, Object> getMe() {
-
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // check null + chưa login
-        if (authentication == null || !authentication.isAuthenticated()
-                || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new RuntimeException("Unauthorized");
-        }
-
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-        // lấy user từ DB
-        Account account = accountRepository.findById(UUID.fromString(userDetails.getUsername()))
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-
-        String role = userDetails.getAuthorities().stream()
-                .findFirst()
-                .map(auth -> auth.getAuthority())
-                .orElse("USER"); 
-
-        return Map.of(
-            "id", account.getId(),
-            "email", account.getEmail(),
-            "fullname", account.getFullname(),
-            "avatar", account.getAvatar(),
-            "role", role
-        );
-    }
 }
