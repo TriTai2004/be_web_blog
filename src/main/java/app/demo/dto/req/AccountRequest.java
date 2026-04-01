@@ -11,6 +11,5 @@ public class AccountRequest {
 
     @NotBlank
     private String fullname;
-    @NotBlank
-    private String avatar;
+
 }

@@ -3,7 +3,6 @@ package app.demo.service;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -145,7 +144,7 @@ public class AuthService {
                                 .id(account.getId())
                                 .email(account.getEmail())
                                 .fullname(account.getFullname() != null ? account.getFullname() : "")
-                                .avatar(account.getAvatar() != null ? account.getAvatar() : "")
+                                .avatar(account.getAvatar() != null ? "https://res.cloudinary.com/dldsnde02n/image/upload/v1775063944/" + account.getAvatar() : "")
                                 .role(role)
                                 .build();
         }

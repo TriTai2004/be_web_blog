@@ -53,7 +53,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/articles/views/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/articles").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/articles/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/articles/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/articles/**").hasRole("ADMIN")
 
@@ -64,6 +64,11 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/likes/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/likes/**").authenticated()
+
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/accounts").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/me").authenticated()    
+
 
                         .anyRequest().authenticated())
 
