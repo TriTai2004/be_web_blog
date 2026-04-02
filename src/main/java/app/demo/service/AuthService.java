@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import app.demo.util.GeneratedUrl;
 import app.demo.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -144,7 +145,7 @@ public class AuthService {
                                 .id(account.getId())
                                 .email(account.getEmail())
                                 .fullname(account.getFullname() != null ? account.getFullname() : "")
-                                .avatar(account.getAvatar() != null ? "https://res.cloudinary.com/dldsnde02n/image/upload/v1775063944/" + account.getAvatar() : "")
+                                .avatar(account.getAvatar() != null ? GeneratedUrl.generateUrl(account.getAvatar()) : "")
                                 .role(role)
                                 .build();
         }

@@ -13,6 +13,7 @@ import app.demo.dto.req.CommentRequest;
 import app.demo.dto.res.CommentResponse;
 import app.demo.modal.Article;
 import app.demo.modal.Comment;
+import app.demo.util.GeneratedUrl;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CommentMapper {
@@ -47,12 +48,20 @@ public interface CommentMapper {
     @Mapping(target = "authorId", source = "comment.author.id")
     @Mapping(target = "parentId", source = "comment.parent.id")
     @Mapping(target = "authorName", source = ".", qualifiedByName = "mapAuthorName")
-    @Mapping(target = "authorAvatar", source = "comment.author.avatar")
+    @Mapping(target = "authorAvatar", source = ".", qualifiedByName = "mapAuthorAvatar")
     @Mapping(target = "totalReplies", source = ".", qualifiedByName = "mapTotalReplies")
     @Mapping(target = "totalLikes", source = ".", qualifiedByName = "mapTotalLikes")
     @Mapping(target = "likedByCurrentUser", source = ".", qualifiedByName = "mapLikedByCurrentUser")
     @Mapping(target = "parentAuthorName", source = "comment.parent.author.fullname")
     CommentResponse toResponse(Comment comment);
+
+    @Named("mapAuthorAvatar")
+    default String mapAuthorAvatar(Comment comment) {
+        if (comment.getAuthor() != null && comment.getAuthor().getAvatar() != null) {
+            return GeneratedUrl.generateUrl(comment.getAuthor().getAvatar());
+        }
+        return null;
+    }
 
     @Named("mapTotalReplies")
     default int mapTotalReplies(Comment comment) {
