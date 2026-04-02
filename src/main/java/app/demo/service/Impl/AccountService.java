@@ -106,7 +106,11 @@ public class AccountService implements IAccountService {
 
         if (file != null && !file.isEmpty()) {
 
-            Map result = cloudinary.uploader().destroy(existingAccount.getAvatar(), ObjectUtils.emptyMap());
+            if (existingAccount.getAvatar() != null && !existingAccount.getAvatar().startsWith("http")) {
+                Map result = cloudinary.uploader().destroy(existingAccount.getAvatar(), ObjectUtils.emptyMap());
+
+            }
+
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             existingAccount.setAvatar(uploadResult.get("public_id").toString());
 

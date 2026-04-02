@@ -145,8 +145,20 @@ public class AuthService {
                                 .id(account.getId())
                                 .email(account.getEmail())
                                 .fullname(account.getFullname() != null ? account.getFullname() : "")
-                                .avatar(account.getAvatar() != null ? GeneratedUrl.generateUrl(account.getAvatar()) : "")
+                                .avatar(account.getAvatar() != null ? GeneratedUrl.generateUrl(account.getAvatar())
+                                                : "")
                                 .role(role)
                                 .build();
+        }
+
+        public ResponseEntity<?> logout(HttpServletResponse response) {
+
+                response.addHeader("Set-Cookie",
+                                "accessToken=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax");
+
+                response.addHeader("Set-Cookie",
+                                "refreshToken=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax");
+
+                return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
         }
 }
