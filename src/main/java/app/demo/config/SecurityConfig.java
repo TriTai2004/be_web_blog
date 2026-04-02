@@ -68,6 +68,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/accounts/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/accounts").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/accounts/me").authenticated()    
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/like-comments").authenticated()    
 
 
                         .anyRequest().authenticated())

@@ -52,6 +52,7 @@ public interface CommentMapper {
     @Mapping(target = "totalReplies", source = ".", qualifiedByName = "mapTotalReplies")
     @Mapping(target = "totalLikes", source = ".", qualifiedByName = "mapTotalLikes")
     @Mapping(target = "likedByCurrentUser", source = ".", qualifiedByName = "mapLikedByCurrentUser")
+    @Mapping(target = "authorEmail", source = "comment.author.email")
     @Mapping(target = "parentAuthorName", source = "comment.parent.author.fullname")
     CommentResponse toResponse(Comment comment);
 

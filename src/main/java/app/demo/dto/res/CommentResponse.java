@@ -14,6 +14,7 @@ public class CommentResponse {
     private String content;
     private String authorName;
     private String authorAvatar;
+    private String authorEmail;
     private Date createdAt;
     private Date updatedAt;
     private UUID articleId;
