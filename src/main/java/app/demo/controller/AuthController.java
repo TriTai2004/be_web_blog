@@ -1,5 +1,6 @@
 package app.demo.controller;
 
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties.Http;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,10 +35,10 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        System.out.println("Received refresh token: " + refreshTokenRequest.getRefreshToken());
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         // Implement refresh token logic here
-        return authService.refreshToken(refreshTokenRequest.getRefreshToken());
+        
+        return authService.refreshToken(request, response);
     }
 
     @PostMapping("/logout")

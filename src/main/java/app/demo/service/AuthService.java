@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import app.demo.dto.res.UserResponse;
 import app.demo.exception.ResourceNotFoundException;
+import app.demo.exception.UnauthorizedException;
 import app.demo.modal.Account;
 import app.demo.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -97,27 +98,42 @@ public class AuthService {
                                 .build());
         }
 
-        public ResponseEntity<?> refreshToken(String refreshToken) {
+        public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
 
-                if (refreshToken.isBlank()) {
-                        return ResponseEntity.status(400).body("Refresh token is required");
+                String refreshToken = null;
+
+                // Lấy token từ cookie
+                if (request.getCookies() != null) {
+                        for (var cookie : request.getCookies()) {
+                                if ("refreshToken".equals(cookie.getName())) {
+                                        refreshToken = cookie.getValue();
+                                }
+                        }
                 }
 
-                if (jwtUtil.isTokenExpired(refreshToken, jwtUtil.getREFRESH_SECRET())) {
-                        return ResponseEntity.status(401).body("Refresh token expired");
+                if (refreshToken == null) {
+                        return ResponseEntity.status(401).body(Map.of("message", "Refresh token not found"));
+                }
+                try {
+                        String email = jwtUtil.extractEmailFromRefreshToken(refreshToken);
+
+                        Account account = accountRepository.findByEmail(email);
+                        if (account == null) {
+                                throw new ResourceNotFoundException("User not found");
+                        }
+
+                        String newAccessToken = jwtUtil.generateToken(account.getEmail(), account.getRole());
+
+                        response.addHeader("Set-Cookie",
+                                        "accessToken=" + newAccessToken
+                                                        + "; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax");
+
+                } catch (Exception e) {
+                        System.out.println("JWT Error: " + e.getMessage());
+                        return ResponseEntity.status(401).body(Map.of("message", "Invalid refresh token"));
                 }
 
-                String email = jwtUtil.extractEmailFromRefreshToken(refreshToken);
-
-                Account account = accountRepository.findByEmail(email);
-
-                String newAccessToken = jwtUtil.generateToken(email, account.getRole());
-
-                // Implement refresh token logic here
-                return ResponseEntity.ok(Map.of(
-                                "accessToken", newAccessToken,
-                                "tokenType", "Bearer",
-                                "expiresIn", jwtUtil.extractExpiration(newAccessToken).getTime()));
+                return ResponseEntity.noContent().build();
         }
 
         public UserResponse getMe() {
@@ -127,7 +143,7 @@ public class AuthService {
                 // check null + chưa login
                 if (authentication == null || !authentication.isAuthenticated()
                                 || authentication.getPrincipal().equals("anonymousUser")) {
-                        throw new RuntimeException("Unauthorized");
+                        throw new UnauthorizedException("Unauthorized");
                 }
 
                 UserDetails userDetails = (UserDetails) authentication.getPrincipal();
